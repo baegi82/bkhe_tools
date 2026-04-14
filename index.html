@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B&K Feature Cards Editor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0a0a0a; --dark: #111; --dark2: #1a1a1a;
+    --gold: #c8a96e; --gold-light: #e0c898;
+    --white: #f5f3ef; --grey: #888;
+    --border: rgba(255,255,255,0.1);
+    --surface: rgba(255,255,255,0.04);
+    --fh: 'Barlow Condensed', sans-serif;
+    --fb: 'Barlow', sans-serif;
+  }
+  body { background: #0f0f0f; color: var(--white); font-family: var(--fb); font-weight: 300; min-height: 100vh; }
+  a { color: var(--gold); }
+
+  /* HEADER */
+  header { background: var(--black); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+  header .logo { font-family: var(--fh); font-size: 20px; font-weight: 700; letter-spacing: .12em; }
+  header .logo span { color: var(--gold); }
+  header p { font-size: 12px; color: var(--grey); letter-spacing: .06em; text-transform: uppercase; }
+
+  /* LAYOUT */
+  .app { display: grid; grid-template-columns: 1fr 380px; min-height: calc(100vh - 65px); }
+  .editor { padding: 32px 40px; border-right: 1px solid var(--border); overflow-y: auto; }
+  .sidebar { padding: 32px; background: var(--black); position: sticky; top: 0; height: calc(100vh - 65px); overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; margin-bottom: 24px; background: var(--surface); border-radius: 8px; padding: 3px; }
+  .tab { flex: 1; padding: 7px 12px; font-size: 12px; font-family: var(--fh); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; border: none; background: transparent; color: var(--grey); border-radius: 6px; transition: all .2s; }
+  .tab.on { background: var(--dark2); color: var(--white); }
+
+  /* CARDS */
+  .ed-card { border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 10px; background: var(--surface); }
+  .ed-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .ed-card-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); opacity: .5; flex-shrink: 0; }
+  .ed-card-head span { font-family: var(--fh); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--white); }
+  .ed-row { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: start; margin-bottom: 10px; }
+  .ed-row label { font-size: 11px; color: var(--grey); text-transform: uppercase; letter-spacing: .08em; padding-top: 7px; }
+  .ed-row input, .ed-row textarea, .ed-row select {
+    width: 100%; font-size: 13px; font-family: var(--fb);
+    padding: 6px 10px; border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.05);
+    color: var(--white); resize: vertical;
+    transition: border-color .2s;
+  }
+  .ed-row input:focus, .ed-row textarea:focus { outline: none; border-color: rgba(200,169,110,.5); }
+  .ed-row textarea { min-height: 62px; line-height: 1.5; }
+
+  /* MEDIA SECTION */
+  .media-block { background: rgba(200,169,110,.06); border: 1px solid rgba(200,169,110,.2); border-radius: 8px; padding: 14px 16px; margin-top: 10px; }
+  .media-block-head { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; font-weight: 600; }
+  .type-toggle { display: flex; gap: 4px; margin-bottom: 10px; }
+  .tt-btn { padding: 4px 12px; font-size: 11px; font-family: var(--fh); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; border: 1px solid var(--border); border-radius: 5px; color: var(--grey); background: transparent; transition: all .2s; }
+  .tt-btn.on { background: var(--dark2); color: var(--white); border-color: rgba(255,255,255,.2); }
+  .hint { font-size: 11px; color: var(--grey); margin-top: 6px; line-height: 1.5; }
+
+  /* SIDEBAR */
+  .sidebar h3 { font-family: var(--fh); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--grey); margin-bottom: 8px; }
+  .preview-list { display: flex; flex-direction: column; gap: 4px; }
+  .preview-item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+  .preview-item .pi-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); opacity: .6; flex-shrink: 0; }
+  .preview-item span { font-size: 12px; color: var(--grey); flex: 1; }
+  .preview-item .pi-type { font-size: 10px; color: rgba(200,169,110,.7); font-family: var(--fh); letter-spacing: .08em; text-transform: uppercase; background: rgba(200,169,110,.1); padding: 2px 7px; border-radius: 4px; }
+
+  .copy-btn { width: 100%; padding: 13px; font-size: 13px; font-family: var(--fh); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; border: none; background: var(--gold); color: var(--black); transition: background .2s; }
+  .copy-btn:hover { background: var(--gold-light); }
+  .copy-btn.copied { background: #4a7c59; color: white; }
+
+  .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .info-box p { font-size: 12px; color: var(--grey); line-height: 1.7; }
+  .info-box code { font-family: monospace; font-size: 11px; background: rgba(255,255,255,.08); padding: 1px 5px; border-radius: 3px; color: var(--gold); }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    header { padding: 16px 20px; }
+    .editor { padding: 20px; }
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="logo">B<span>&</span>K <span style="color:var(--white);font-weight:300">Feature Cards Editor</span></div>
+  <p>Elementor HTML-Widget Generator</p>
+</header>
+
+<div class="app">
+  <div class="editor">
+    <div class="tabs">
+      <button class="tab on" onclick="switchTab('cards')">Karten-Texte</button>
+      <button class="tab" onclick="switchTab('media')">Media pro Karte</button>
+    </div>
+    <div id="pane-cards"></div>
+    <div id="pane-media" style="display:none"></div>
+  </div>
+
+  <div class="sidebar">
+    <div>
+      <h3>Übersicht Media</h3>
+      <div class="preview-list" id="preview-list"></div>
+    </div>
+
+    <div class="info-box">
+      <p>Klicke auf <strong style="color:var(--white)">Code kopieren</strong> und füge den Code direkt in ein Elementor <code>HTML-Widget</code> ein. Container auf <code>Full Width</code> und Padding auf <code>0</code> stellen.</p>
+    </div>
+
+    <button class="copy-btn" id="copy-btn" onclick="copyCode()">Code kopieren</button>
+  </div>
+</div>
+
+<script>
+const features = [
+  {key:'leinwand',  label:'Motorisierte Leinwand', icon:'screen', title:'Kino auf Knopfdruck',     ov:'Motorisierte Leinwand', short:'Fährt lautlos auf Knopfdruck aus – und verschwindet ebenso lautlos wieder.',       long:'Die elektrische Leinwand fährt lautlos und präzise aus dem Lowboard aus – und verschwindet ebenso lautlos wieder darin. Kein sichtbares Zubehör stört die Optik Ihres Wohnraums. Perfekt auf den Kurzdistanzbeamer abgestimmt.', row:1},
+  {key:'knopfdruck',label:'Auf Knopfdruck',        icon:'clock',  title:'Alles mit einem Druck',   ov:'Automation',            short:'Ein Druck – Beamer startet, Leinwand fährt aus. Smart-Home-kompatibel.',              long:'Beamer einschalten, Leinwand ausfahren, Licht dimmen – alles automatisch mit einem einzigen Knopfdruck oder per Smart-Home-Integration. Kompatibel mit Control4, Lutron und Apple Home.', row:1},
+  {key:'lasertv',   label:'Laser TV Integration',  icon:'play',   title:'Perfekte Symbiose',       ov:'Laser TV Integration',  short:'Speziell für UST-Beamer entwickelt – Beamer und Leinwand perfekt abgestimmt.',   long:'Unsere Lowboards sind speziell für Kurzdistanzbeamer (UST) entwickelt. Der Beamer projiziert direkt aus dem Lowboard – gestochen scharfes Bild von 84 bis über 150 Zoll, ohne langen Projektionsweg.', row:1},
+  {key:'kabel',     label:'Versteckte Kabel',      icon:'cable',  title:'Makellose Oberfläche',    ov:'Kabelmanagement',       short:'Alle Kabel verschwinden im Inneren – makellose Oberfläche, immer.',              long:'Alle HDMI-, Strom- und Audiokabel verschwinden im Inneren des Lowboards. Gefräste Kabelkanäle führen alle Verbindungen unsichtbar. Die Oberfläche bleibt zu jeder Zeit makellos.', row:2},
+  {key:'audio',     label:'Audio Integration',     icon:'sound',  title:'Klang ohne Kompromisse',  ov:'Audio Integration',     short:'Lautsprecher und Soundbars unsichtbar und klanglich perfekt eingebaut.',          long:'Lautsprecher, Verstärker und Soundbars finden im Lowboard ihren festen Platz. Ob 2.1-System oder vollwertiger Surround-Sound – wir integrieren Ihre Audiokomponenten klanglich und optisch perfekt.', row:2},
+  {key:'swiss',     label:'Swiss Made',            icon:'layers', title:'Qualität aus der Schweiz',ov:'Swiss Made',            short:'Massgefertigt in der Schweiz – Präzision und zeitloses Design.',                  long:'Jedes B&K Lowboard wird in der Schweiz massgefertigt. Wir verwenden ausschliesslich hochwertige Materialien und arbeiten mit renommierten Schweizer Partnern zusammen. Qualität, die Jahrzehnte hält.', row:2},
+];
+
+const defaultVideo = 'https://bkhe.ch/wp-content/uploads/2025/03/BK_UST_Lowboard_16x9.mp4';
+const mediaTypes = {};
+features.forEach(f => { mediaTypes[f.key] = 'video'; });
+
+const svgIcons = {
+  screen: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="1"/><path d="M8 21h8M12 17v4"/></svg>',
+  clock:  '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>',
+  play:   '<svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>',
+  cable:  '<svg viewBox="0 0 24 24"><path d="M4 12h16M4 12c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4M4 12c0 2.2 1.8 4 4 4h8c2.2 0 4-1.8 4-4"/></svg>',
+  sound:  '<svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>',
+  layers: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+};
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('on', (i===0&&t==='cards')||(i===1&&t==='media')));
+  document.getElementById('pane-cards').style.display = t==='cards' ? '' : 'none';
+  document.getElementById('pane-media').style.display = t==='media' ? '' : 'none';
+}
+
+function setMediaType(key, type) {
+  mediaTypes[key] = type;
+  document.querySelectorAll('.tt-btn[data-key="'+key+'"]').forEach(b => b.classList.toggle('on', b.dataset.type===type));
+  document.getElementById('url-label-'+key).textContent = type==='video' ? 'Video URL' : 'Bild URL';
+  document.getElementById('url-hint-'+key).textContent = type==='video'
+    ? 'MP4-Link aus der WordPress Mediathek einfügen'
+    : 'JPG / PNG / WebP-Link aus der WordPress Mediathek einfügen';
+  updatePreview();
+}
+
+function updatePreview() {
+  document.getElementById('preview-list').innerHTML = features.map(f => {
+    const type = mediaTypes[f.key];
+    const url = val(f.key+'-media-url') || '—';
+    const short = url.length > 30 ? '…'+url.slice(-28) : url;
+    return `<div class="preview-item">
+      <div class="pi-dot"></div>
+      <span>${f.label}</span>
+      <span class="pi-type">${type==='video'?'Video':'Bild'}</span>
+    </div>`;
+  }).join('');
+}
+
+function buildCards() {
+  document.getElementById('pane-cards').innerHTML = features.map(f => `
+    <div class="ed-card">
+      <div class="ed-card-head"><div class="dot"></div><span>${f.label}</span></div>
+      <div class="ed-row"><label>Kartentitel</label><input type="text" id="${f.key}-label" value="${f.label}"></div>
+      <div class="ed-row"><label>Kurztext</label><textarea id="${f.key}-short">${f.short}</textarea></div>
+      <div class="ed-row"><label>Overline</label><input type="text" id="${f.key}-ov" value="${f.ov}"></div>
+      <div class="ed-row"><label>Expand Titel</label><input type="text" id="${f.key}-title" value="${f.title}"></div>
+      <div class="ed-row"><label>Expand Text</label><textarea id="${f.key}-long">${f.long}</textarea></div>
+    </div>`).join('');
+}
+
+function buildMedia() {
+  document.getElementById('pane-media').innerHTML = features.map(f => `
+    <div class="ed-card">
+      <div class="ed-card-head"><div class="dot"></div><span>${f.label}</span></div>
+      <div class="media-block">
+        <div class="media-block-head">Medientyp im Expand-Panel</div>
+        <div class="type-toggle">
+          <button class="tt-btn on" data-key="${f.key}" data-type="video" onclick="setMediaType('${f.key}','video')">Video</button>
+          <button class="tt-btn" data-key="${f.key}" data-type="image" onclick="setMediaType('${f.key}','image')">Bild</button>
+        </div>
+        <div class="ed-row">
+          <label id="url-label-${f.key}">Video URL</label>
+          <input type="text" id="${f.key}-media-url" value="${defaultVideo}" oninput="updatePreview()">
+        </div>
+        <p class="hint" id="url-hint-${f.key}">MP4-Link aus der WordPress Mediathek einfügen</p>
+      </div>
+    </div>`).join('');
+}
+
+function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function mediaTag(f) {
+  const url = val(f.key+'-media-url');
+  if (mediaTypes[f.key] === 'image') {
+    return `<img src="${url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`;
+  }
+  return `<video autoplay muted loop playsinline><source src="${url}" type="video/mp4"></video>`;
+}
+
+function expandPanel(r, f) {
+  return `
+  <div class="bk-fx" id="bk-fx${r}">
+    <div class="bk-fx-media">${mediaTag(f)}</div>
+    <div class="bk-fx-txt">
+      <span class="bk-fx-ov" id="bk-ft${r}"></span>
+      <h3 id="bk-fh${r}"></h3>
+      <p id="bk-fd${r}"></p>
+      <button class="bk-close-btn" onclick="bkCloseF(${r})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>Schliessen</button>
+    </div>
+  </div>`;
+}
+
+function copyCode() {
+  const row1last = features.find(f => f.key==='lasertv');
+  const row2last = features.find(f => f.key==='swiss');
+  const cards = features.map(f => `
+  <div class="bk-fi" data-f="${f.key}">
+    <span class="bk-fi-icon">${svgIcons[f.icon]}</span>
+    <h4>${val(f.key+'-label')}</h4>
+    <p>${val(f.key+'-short')}</p>
+    <svg class="bk-fi-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+  </div>${f.key==='lasertv' ? expandPanel(1,row1last) : ''}${f.key==='swiss' ? expandPanel(2,row2last) : ''}`).join('');
+
+  const fd = features.map(f => `  ${f.key}:{t:'${val(f.key+"-ov")}',h:'${val(f.key+"-title")}',d:'${val(f.key+"-long")}',r:${f.row}}`).join(',\n');
+
+  const code = `<style>
+.bk-features{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#111}
+.bk-fi{background:#1a1a1a;padding:36px 28px 52px;border-top:2px solid transparent;transition:border-color .3s,background .3s;cursor:pointer;position:relative}
+.bk-fi:hover,.bk-fi.active{border-top-color:#c8a96e;background:#1c1c1c}
+.bk-fi-icon{width:36px;height:36px;margin-bottom:18px;display:block}
+.bk-fi-icon svg{width:36px;height:36px;fill:none;stroke:#c8a96e;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.bk-fi h4{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#f5f3ef;margin:0 0 8px}
+.bk-fi>p{font-size:13px;color:#888;line-height:1.65;margin:0}
+.bk-fi-arrow{position:absolute;bottom:18px;right:22px;width:18px;height:18px;color:#c8a96e;opacity:.35;transition:opacity .3s,transform .3s}
+.bk-fi:hover .bk-fi-arrow,.bk-fi.active .bk-fi-arrow{opacity:1}
+.bk-fi.active .bk-fi-arrow{transform:rotate(180deg)}
+.bk-fx{display:none;grid-column:1/-1;background:#0d0d0d;border-top:1px solid #222;animation:bkIn .3s ease}
+.bk-fx.open{display:grid;grid-template-columns:1fr 1fr}
+@keyframes bkIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.bk-fx-media{background:#000;min-height:320px;position:relative;overflow:hidden}
+.bk-fx-media video,.bk-fx-media img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.bk-fx-txt{padding:48px 44px;display:flex;flex-direction:column;justify-content:center}
+.bk-fx-ov{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#c8a96e;margin-bottom:10px;display:block}
+.bk-fx-txt h3{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;text-transform:uppercase;color:#f5f3ef;margin:0 0 14px}
+.bk-fx-txt p{font-size:14px;color:rgba(245,243,239,.6);line-height:1.8;margin:0 0 24px}
+.bk-close-btn{display:inline-flex;align-items:center;gap:8px;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#888;cursor:pointer;border:none;background:none;padding:0}
+.bk-close-btn:hover{color:#f5f3ef}
+@media(max-width:768px){.bk-features{grid-template-columns:1fr}.bk-fx.open{grid-template-columns:1fr}.bk-fx-media{min-height:220px}.bk-fx-txt{padding:32px 24px}}
+</style>
+<div class="bk-features">${cards}
+</div>
+<script>
+var bkFd={
+${fd}
+};
+var bkActive=null;
+function bkCloseF(r){document.getElementById('bk-fx'+r).classList.remove('open');document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active')});bkActive=null}
+document.querySelectorAll('.bk-fi').forEach(function(el){el.addEventListener('click',function(){var k=this.dataset.f,d=bkFd[k];if(bkActive===k){bkCloseF(d.r);return}bkCloseF(1);bkCloseF(2);document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active')});this.classList.add('active');bkActive=k;document.getElementById('bk-ft'+d.r).textContent=d.t;document.getElementById('bk-fh'+d.r).textContent=d.h;document.getElementById('bk-fd'+d.r).textContent=d.d;var p=document.getElementById('bk-fx'+d.r);p.classList.add('open');p.scrollIntoView({behavior:'smooth',block:'nearest'})})});
+<\/script>`;
+
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Code kopiert!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Code kopieren'; btn.classList.remove('copied'); }, 2500);
+  });
+}
+
+buildCards();
+buildMedia();
+updatePreview();
+</script>
+</body>
+</html>
