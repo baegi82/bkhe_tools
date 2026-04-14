@@ -4,243 +4,343 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>B&K Feature Cards Editor</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --black: #0a0a0a; --dark: #111; --dark2: #1a1a1a;
-    --gold: #c8a96e; --gold-light: #e0c898;
-    --white: #f5f3ef; --grey: #888;
-    --border: rgba(255,255,255,0.1);
-    --surface: rgba(255,255,255,0.04);
-    --fh: 'Barlow Condensed', sans-serif;
-    --fb: 'Barlow', sans-serif;
-  }
-  body { background: #0f0f0f; color: var(--white); font-family: var(--fb); font-weight: 300; min-height: 100vh; }
-  a { color: var(--gold); }
-
-  /* HEADER */
-  header { background: var(--black); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
-  header .logo { font-family: var(--fh); font-size: 20px; font-weight: 700; letter-spacing: .12em; }
-  header .logo span { color: var(--gold); }
-  header p { font-size: 12px; color: var(--grey); letter-spacing: .06em; text-transform: uppercase; }
-
-  /* LAYOUT */
-  .app { display: grid; grid-template-columns: 1fr 380px; min-height: calc(100vh - 65px); }
-  .editor { padding: 32px 40px; border-right: 1px solid var(--border); overflow-y: auto; }
-  .sidebar { padding: 32px; background: var(--black); position: sticky; top: 0; height: calc(100vh - 65px); overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-
-  /* TABS */
-  .tabs { display: flex; gap: 2px; margin-bottom: 24px; background: var(--surface); border-radius: 8px; padding: 3px; }
-  .tab { flex: 1; padding: 7px 12px; font-size: 12px; font-family: var(--fh); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; border: none; background: transparent; color: var(--grey); border-radius: 6px; transition: all .2s; }
-  .tab.on { background: var(--dark2); color: var(--white); }
-
-  /* CARDS */
-  .ed-card { border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 10px; background: var(--surface); }
-  .ed-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-  .ed-card-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); opacity: .5; flex-shrink: 0; }
-  .ed-card-head span { font-family: var(--fh); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--white); }
-  .ed-row { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: start; margin-bottom: 10px; }
-  .ed-row label { font-size: 11px; color: var(--grey); text-transform: uppercase; letter-spacing: .08em; padding-top: 7px; }
-  .ed-row input, .ed-row textarea, .ed-row select {
-    width: 100%; font-size: 13px; font-family: var(--fb);
-    padding: 6px 10px; border-radius: 6px;
-    border: 1px solid var(--border);
-    background: rgba(255,255,255,0.05);
-    color: var(--white); resize: vertical;
-    transition: border-color .2s;
-  }
-  .ed-row input:focus, .ed-row textarea:focus { outline: none; border-color: rgba(200,169,110,.5); }
-  .ed-row textarea { min-height: 62px; line-height: 1.5; }
-
-  /* MEDIA SECTION */
-  .media-block { background: rgba(200,169,110,.06); border: 1px solid rgba(200,169,110,.2); border-radius: 8px; padding: 14px 16px; margin-top: 10px; }
-  .media-block-head { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; font-weight: 600; }
-  .type-toggle { display: flex; gap: 4px; margin-bottom: 10px; }
-  .tt-btn { padding: 4px 12px; font-size: 11px; font-family: var(--fh); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; border: 1px solid var(--border); border-radius: 5px; color: var(--grey); background: transparent; transition: all .2s; }
-  .tt-btn.on { background: var(--dark2); color: var(--white); border-color: rgba(255,255,255,.2); }
-  .hint { font-size: 11px; color: var(--grey); margin-top: 6px; line-height: 1.5; }
-
-  /* SIDEBAR */
-  .sidebar h3 { font-family: var(--fh); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--grey); margin-bottom: 8px; }
-  .preview-list { display: flex; flex-direction: column; gap: 4px; }
-  .preview-item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
-  .preview-item .pi-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); opacity: .6; flex-shrink: 0; }
-  .preview-item span { font-size: 12px; color: var(--grey); flex: 1; }
-  .preview-item .pi-type { font-size: 10px; color: rgba(200,169,110,.7); font-family: var(--fh); letter-spacing: .08em; text-transform: uppercase; background: rgba(200,169,110,.1); padding: 2px 7px; border-radius: 4px; }
-
-  .copy-btn { width: 100%; padding: 13px; font-size: 13px; font-family: var(--fh); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; border: none; background: var(--gold); color: var(--black); transition: background .2s; }
-  .copy-btn:hover { background: var(--gold-light); }
-  .copy-btn.copied { background: #4a7c59; color: white; }
-
-  .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
-  .info-box p { font-size: 12px; color: var(--grey); line-height: 1.7; }
-  .info-box code { font-family: monospace; font-size: 11px; background: rgba(255,255,255,.08); padding: 1px 5px; border-radius: 3px; color: var(--gold); }
-
-  @media (max-width: 900px) {
-    .app { grid-template-columns: 1fr; }
-    .sidebar { position: static; height: auto; }
-    header { padding: 16px 20px; }
-    .editor { padding: 20px; }
-  }
-</style>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0a0a0a;--dark:#111;--dark2:#1a1a1a;
+  --gold:#c8a96e;--gold-light:#e0c898;
+  --white:#f5f3ef;--grey:#888;
+  --border:rgba(255,255,255,0.1);
+  --surface:rgba(255,255,255,0.04);
+  --fh:'Barlow Condensed',sans-serif;
+  --fb:'Barlow',sans-serif;
+}
+body{background:#0f0f0f;color:var(--white);font-family:var(--fb);font-weight:300;min-height:100vh}
+header{background:var(--black);border-bottom:1px solid var(--border);padding:18px 40px;display:flex;align-items:center;justify-content:space-between}
+header .logo{font-family:var(--fh);font-size:20px;font-weight:700;letter-spacing:.12em}
+header .logo span{color:var(--gold)}
+header p{font-size:12px;color:var(--grey);letter-spacing:.06em;text-transform:uppercase}
+.app{display:grid;grid-template-columns:1fr 300px;min-height:calc(100vh - 61px)}
+.editor{padding:28px 36px;overflow-y:auto}
+.sidebar{padding:24px;background:var(--black);border-left:1px solid var(--border);position:sticky;top:0;height:calc(100vh - 61px);overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.ed-card{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--surface);overflow:hidden;transition:border-color .2s}
+.ed-card.disabled{opacity:.4}
+.ed-card-head{display:flex;align-items:center;gap:10px;padding:13px 16px;user-select:none}
+.ed-card-head .toggle-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.toggle{width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,.1);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--gold)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle.on::after{transform:translateX(16px)}
+.ed-card-head .card-label{font-family:var(--fh);font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--white);flex:1;cursor:pointer}
+.chevron{width:16px;height:16px;color:var(--grey);transition:transform .2s;flex-shrink:0;cursor:pointer}
+.chevron.open{transform:rotate(180deg)}
+.ed-body{padding:0 16px 16px;display:none}
+.ed-body.open{display:block}
+.ed-section{margin-top:14px}
+.ed-section-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:8px;font-family:var(--fh)}
+.ed-row{display:grid;grid-template-columns:84px 1fr;gap:8px;align-items:start;margin-bottom:7px}
+.ed-row label{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:.07em;padding-top:7px}
+.ed-row input,.ed-row textarea{width:100%;font-size:13px;font-family:var(--fb);padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--white);resize:vertical;transition:border-color .2s}
+.ed-row input:focus,.ed-row textarea:focus{outline:none;border-color:rgba(200,169,110,.5)}
+.ed-row textarea{min-height:56px;line-height:1.5}
+.icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px}
+.icon-btn{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent;transition:all .2s;padding:7px}
+.icon-btn:hover{border-color:rgba(200,169,110,.4);background:rgba(200,169,110,.06)}
+.icon-btn.selected{border-color:var(--gold);background:rgba(200,169,110,.12)}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:var(--grey);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}
+.icon-btn:hover svg,.icon-btn.selected svg{stroke:var(--gold)}
+.upload-icon-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px;margin-top:4px;font-size:11px;font-family:var(--fh);letter-spacing:.1em;text-transform:uppercase;color:var(--grey);border:1px dashed rgba(255,255,255,.15);border-radius:6px;background:transparent;cursor:pointer;transition:all .2s}
+.upload-icon-btn:hover{border-color:rgba(200,169,110,.4);color:var(--gold)}
+.upload-icon-btn svg{width:14px;height:14px;flex-shrink:0}
+.custom-icon-preview{width:32px;height:32px;border:1px solid var(--gold);border-radius:6px;background:rgba(200,169,110,.12);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.custom-icon-preview svg{width:18px;height:18px;stroke:var(--gold)}
+.type-toggle{display:flex;gap:3px;margin-bottom:8px}
+.tt-btn{padding:4px 12px;font-size:11px;font-family:var(--fh);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);border-radius:5px;color:var(--grey);background:transparent;transition:all .2s}
+.tt-btn.on{background:var(--dark2);color:var(--white);border-color:rgba(255,255,255,.2)}
+.media-preview{width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#000;margin-top:7px;position:relative;border:1px solid var(--border)}
+.media-preview img{width:100%;height:100%;object-fit:contain;background:#fff;display:block}
+.media-preview video{width:100%;height:100%;object-fit:cover;display:block}
+.prev-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--grey);font-family:var(--fh);letter-spacing:.1em;text-transform:uppercase}
+.preview-badge{position:absolute;top:5px;right:5px;font-size:10px;font-family:var(--fh);letter-spacing:.1em;text-transform:uppercase;background:rgba(0,0,0,.7);color:var(--gold);padding:2px 6px;border-radius:4px}
+.sep{height:1px;background:var(--border);margin:4px 0}
+.sidebar h3{font-family:var(--fh);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--grey);margin-bottom:7px}
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.info-box p{font-size:12px;color:var(--grey);line-height:1.7}
+.info-box code{font-family:monospace;font-size:11px;background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px;color:var(--gold)}
+.status-list{display:flex;flex-direction:column;gap:4px}
+.status-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--border)}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.status-dot.on{background:var(--gold)}
+.status-dot.off{background:#444}
+.status-item span{font-size:12px;color:var(--grey);flex:1}
+.status-item .row-badge{font-size:10px;font-family:var(--fh);letter-spacing:.08em;text-transform:uppercase;color:rgba(200,169,110,.6);background:rgba(200,169,110,.08);padding:2px 6px;border-radius:4px}
+.copy-btn{width:100%;padding:12px;font-size:13px;font-family:var(--fh);font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:8px;border:none;background:var(--gold);color:var(--black);transition:background .2s;margin-top:auto}
+.copy-btn:hover{background:var(--gold-light)}
+.copy-btn.copied{background:#4a7c59;color:#fff}
+@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{position:static;height:auto}header{padding:14px 20px}.editor{padding:16px}}
+</style>
 </head>
 <body>
-
 <header>
   <div class="logo">B<span>&</span>K <span style="color:var(--white);font-weight:300">Feature Cards Editor</span></div>
   <p>Elementor HTML-Widget Generator</p>
 </header>
-
 <div class="app">
-  <div class="editor">
-    <div class="tabs">
-      <button class="tab on" onclick="switchTab('cards')">Karten-Texte</button>
-      <button class="tab" onclick="switchTab('media')">Media pro Karte</button>
-    </div>
-    <div id="pane-cards"></div>
-    <div id="pane-media" style="display:none"></div>
-  </div>
-
+  <div class="editor" id="editor"></div>
   <div class="sidebar">
     <div>
-      <h3>Übersicht Media</h3>
-      <div class="preview-list" id="preview-list"></div>
+      <h3>Aktive Karten</h3>
+      <div class="status-list" id="status-list"></div>
     </div>
-
     <div class="info-box">
-      <p>Klicke auf <strong style="color:var(--white)">Code kopieren</strong> und füge den Code direkt in ein Elementor <code>HTML-Widget</code> ein. Container auf <code>Full Width</code> und Padding auf <code>0</code> stellen.</p>
+      <p>Karten ein/ausschalten mit dem Toggle. Nur aktive Karten werden im generierten Code eingebaut.<br><br>Fertigen Code in ein Elementor <code>HTML-Widget</code> einfügen. Container auf <code>Full Width</code>, Padding <code>0</code>.</p>
     </div>
-
     <button class="copy-btn" id="copy-btn" onclick="copyCode()">Code kopieren</button>
   </div>
 </div>
 
 <script>
-const features = [
-  {key:'leinwand',  label:'Motorisierte Leinwand', icon:'screen', title:'Kino auf Knopfdruck',     ov:'Motorisierte Leinwand', short:'Fährt lautlos auf Knopfdruck aus – und verschwindet ebenso lautlos wieder.',       long:'Die elektrische Leinwand fährt lautlos und präzise aus dem Lowboard aus – und verschwindet ebenso lautlos wieder darin. Kein sichtbares Zubehör stört die Optik Ihres Wohnraums. Perfekt auf den Kurzdistanzbeamer abgestimmt.', row:1},
-  {key:'knopfdruck',label:'Auf Knopfdruck',        icon:'clock',  title:'Alles mit einem Druck',   ov:'Automation',            short:'Ein Druck – Beamer startet, Leinwand fährt aus. Smart-Home-kompatibel.',              long:'Beamer einschalten, Leinwand ausfahren, Licht dimmen – alles automatisch mit einem einzigen Knopfdruck oder per Smart-Home-Integration. Kompatibel mit Control4, Lutron und Apple Home.', row:1},
-  {key:'lasertv',   label:'Laser TV Integration',  icon:'play',   title:'Perfekte Symbiose',       ov:'Laser TV Integration',  short:'Speziell für UST-Beamer entwickelt – Beamer und Leinwand perfekt abgestimmt.',   long:'Unsere Lowboards sind speziell für Kurzdistanzbeamer (UST) entwickelt. Der Beamer projiziert direkt aus dem Lowboard – gestochen scharfes Bild von 84 bis über 150 Zoll, ohne langen Projektionsweg.', row:1},
-  {key:'kabel',     label:'Versteckte Kabel',      icon:'cable',  title:'Makellose Oberfläche',    ov:'Kabelmanagement',       short:'Alle Kabel verschwinden im Inneren – makellose Oberfläche, immer.',              long:'Alle HDMI-, Strom- und Audiokabel verschwinden im Inneren des Lowboards. Gefräste Kabelkanäle führen alle Verbindungen unsichtbar. Die Oberfläche bleibt zu jeder Zeit makellos.', row:2},
-  {key:'audio',     label:'Audio Integration',     icon:'sound',  title:'Klang ohne Kompromisse',  ov:'Audio Integration',     short:'Lautsprecher und Soundbars unsichtbar und klanglich perfekt eingebaut.',          long:'Lautsprecher, Verstärker und Soundbars finden im Lowboard ihren festen Platz. Ob 2.1-System oder vollwertiger Surround-Sound – wir integrieren Ihre Audiokomponenten klanglich und optisch perfekt.', row:2},
-  {key:'swiss',     label:'Swiss Made',            icon:'layers', title:'Qualität aus der Schweiz',ov:'Swiss Made',            short:'Massgefertigt in der Schweiz – Präzision und zeitloses Design.',                  long:'Jedes B&K Lowboard wird in der Schweiz massgefertigt. Wir verwenden ausschliesslich hochwertige Materialien und arbeiten mit renommierten Schweizer Partnern zusammen. Qualität, die Jahrzehnte hält.', row:2},
-];
-
-const defaultVideo = 'https://bkhe.ch/wp-content/uploads/2025/03/BK_UST_Lowboard_16x9.mp4';
-const mediaTypes = {};
-features.forEach(f => { mediaTypes[f.key] = 'video'; });
-
-const svgIcons = {
-  screen: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="1"/><path d="M8 21h8M12 17v4"/></svg>',
-  clock:  '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>',
-  play:   '<svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>',
-  cable:  '<svg viewBox="0 0 24 24"><path d="M4 12h16M4 12c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4M4 12c0 2.2 1.8 4 4 4h8c2.2 0 4-1.8 4-4"/></svg>',
-  sound:  '<svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>',
-  layers: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+const ICONS = {
+  screen:  '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="1"/><path d="M8 21h8M12 17v4"/></svg>',
+  clock:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>',
+  play:    '<svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>',
+  cable:   '<svg viewBox="0 0 24 24"><path d="M4 12h16M4 12c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4M4 12c0 2.2 1.8 4 4 4h8c2.2 0 4-1.8 4-4"/></svg>',
+  sound:   '<svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>',
+  layers:  '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+  star:    '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  home:    '<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
+  wifi:    '<svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>',
+  zap:     '<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  check:   '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+  heart:   '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+  eye:     '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  tool:    '<svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>',
+  swiss:   '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
 };
 
-function switchTab(t) {
-  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('on', (i===0&&t==='cards')||(i===1&&t==='media')));
-  document.getElementById('pane-cards').style.display = t==='cards' ? '' : 'none';
-  document.getElementById('pane-media').style.display = t==='media' ? '' : 'none';
+const DEFAULT_VIDEO = 'https://bkhe.ch/wp-content/uploads/2025/03/BK_UST_Lowboard_16x9.mp4';
+
+const features = [
+  {key:'leinwand',  label:'Motorisierte Leinwand', icon:'screen', title:'Kino auf Knopfdruck',     ov:'Motorisierte Leinwand', short:'Fährt lautlos auf Knopfdruck aus – und verschwindet ebenso lautlos wieder.',       long:'Die elektrische Leinwand fährt lautlos und präzise aus dem Lowboard aus – und verschwindet ebenso lautlos wieder darin. Kein sichtbares Zubehör stört die Optik Ihres Wohnraums. Perfekt auf den Kurzdistanzbeamer abgestimmt.', mediaType:'video', mediaUrl:DEFAULT_VIDEO, enabled:true},
+  {key:'knopfdruck',label:'Auf Knopfdruck',        icon:'clock',  title:'Alles mit einem Druck',   ov:'Automation',            short:'Ein Druck – Beamer startet, Leinwand fährt aus. Smart-Home-kompatibel.',              long:'Beamer einschalten, Leinwand ausfahren, Licht dimmen – alles automatisch mit einem einzigen Knopfdruck oder per Smart-Home-Integration. Kompatibel mit Control4, Lutron und Apple Home.', mediaType:'video', mediaUrl:DEFAULT_VIDEO, enabled:true},
+  {key:'lasertv',   label:'Laser TV Integration',  icon:'play',   title:'Perfekte Symbiose',       ov:'Laser TV Integration',  short:'Speziell für UST-Beamer entwickelt – Beamer und Leinwand perfekt abgestimmt.',   long:'Unsere Lowboards sind speziell für Kurzdistanzbeamer (UST) entwickelt. Der Beamer projiziert direkt aus dem Lowboard – gestochen scharfes Bild von 84 bis über 150 Zoll, ohne langen Projektionsweg.', mediaType:'video', mediaUrl:DEFAULT_VIDEO, enabled:true},
+  {key:'kabel',     label:'Versteckte Kabel',      icon:'cable',  title:'Makellose Oberfläche',    ov:'Kabelmanagement',       short:'Alle Kabel verschwinden im Inneren – makellose Oberfläche, immer.',              long:'Alle HDMI-, Strom- und Audiokabel verschwinden im Inneren des Lowboards. Gefräste Kabelkanäle führen alle Verbindungen unsichtbar. Die Oberfläche bleibt zu jeder Zeit makellos.', mediaType:'video', mediaUrl:DEFAULT_VIDEO, enabled:true},
+  {key:'audio',     label:'Audio Integration',     icon:'sound',  title:'Klang ohne Kompromisse',  ov:'Audio Integration',     short:'Lautsprecher und Soundbars unsichtbar und klanglich perfekt eingebaut.',          long:'Lautsprecher, Verstärker und Soundbars finden im Lowboard ihren festen Platz. Ob 2.1-System oder vollwertiger Surround-Sound – wir integrieren Ihre Audiokomponenten klanglich und optisch perfekt.', mediaType:'video', mediaUrl:DEFAULT_VIDEO, enabled:true},
+  {key:'swiss',     label:'Swiss Made',            icon:'swiss',  title:'Qualität aus der Schweiz',ov:'Swiss Made',            short:'Massgefertigt in der Schweiz – Präzision und zeitloses Design.',                  long:'Jedes B&K Lowboard wird in der Schweiz massgefertigt. Wir verwenden ausschliesslich hochwertige Materialien und arbeiten mit renommierten Schweizer Partnern zusammen. Qualität, die Jahrzehnte hält.', mediaType:'video', mediaUrl:DEFAULT_VIDEO, enabled:true},
+];
+
+const customIcons = {};
+
+function val(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+
+function isEnabled(key){ return document.getElementById('tog-'+key).classList.contains('on'); }
+
+function toggleCard(key) {
+  const tog = document.getElementById('tog-'+key);
+  const card = document.getElementById('card-'+key);
+  tog.classList.toggle('on');
+  card.classList.toggle('disabled', !tog.classList.contains('on'));
+  updateStatus();
+}
+
+function expandCard(key) {
+  const body = document.getElementById('body-'+key);
+  const chev = document.getElementById('chev-'+key);
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function updatePreview(key) {
+  const typeEl = document.querySelector('.tt-btn.on[data-key="'+key+'"]');
+  const type = typeEl ? typeEl.dataset.type : 'video';
+  const url = val(key+'-media-url');
+  const prev = document.getElementById('prev-'+key);
+  if (!prev) return;
+  if (!url) { prev.innerHTML='<div class="prev-empty">Keine URL</div>'; return; }
+  if (type === 'image') {
+    prev.innerHTML = '<img src="'+url+'" alt=""><span class="preview-badge">Bild</span>';
+  } else {
+    prev.innerHTML = '<video autoplay muted loop playsinline><source src="'+url+'" type="video/mp4"></video><span class="preview-badge">Video</span>';
+  }
 }
 
 function setMediaType(key, type) {
-  mediaTypes[key] = type;
-  document.querySelectorAll('.tt-btn[data-key="'+key+'"]').forEach(b => b.classList.toggle('on', b.dataset.type===type));
+  document.querySelectorAll('.tt-btn[data-key="'+key+'"]').forEach(b=>b.classList.toggle('on',b.dataset.type===type));
   document.getElementById('url-label-'+key).textContent = type==='video' ? 'Video URL' : 'Bild URL';
-  document.getElementById('url-hint-'+key).textContent = type==='video'
-    ? 'MP4-Link aus der WordPress Mediathek einfügen'
-    : 'JPG / PNG / WebP-Link aus der WordPress Mediathek einfügen';
-  updatePreview();
+  updatePreview(key);
 }
 
-function updatePreview() {
-  document.getElementById('preview-list').innerHTML = features.map(f => {
-    const type = mediaTypes[f.key];
-    const url = val(f.key+'-media-url') || '—';
-    const short = url.length > 30 ? '…'+url.slice(-28) : url;
-    return `<div class="preview-item">
-      <div class="pi-dot"></div>
-      <span>${f.label}</span>
-      <span class="pi-type">${type==='video'?'Video':'Bild'}</span>
+function selectIcon(key, iconKey) {
+  document.querySelectorAll('.icon-btn[data-key="'+key+'"]').forEach(b=>b.classList.toggle('selected',b.dataset.icon===iconKey));
+  const customPrev = document.getElementById('custom-prev-'+key);
+  if (customPrev) customPrev.style.display = 'none';
+}
+
+function triggerUpload(key) {
+  const inp = document.getElementById('svg-upload-'+key);
+  inp.click();
+}
+
+function handleSvgUpload(key, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    let svgText = e.target.result.trim();
+    // Clean up SVG - remove width/height attributes for clean embedding
+    svgText = svgText.replace(/\s(width|height)="[^"]*"/g, '');
+    customIcons[key] = svgText;
+    // Deselect all preset icons
+    document.querySelectorAll('.icon-btn[data-key="'+key+'"]').forEach(b=>b.classList.remove('selected'));
+    // Show custom preview
+    const prev = document.getElementById('custom-prev-'+key);
+    prev.style.display = 'flex';
+    prev.innerHTML = svgText;
+    prev.querySelector('svg').style.cssText = 'width:18px;height:18px;stroke:var(--gold);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round';
+  };
+  reader.readAsText(file);
+}
+
+function getIconSvg(key) {
+  if (customIcons[key]) return customIcons[key];
+  const sel = document.querySelector('.icon-btn.selected[data-key="'+key+'"]');
+  if (sel) return ICONS[sel.dataset.icon];
+  return ICONS[features.find(f=>f.key===key).icon];
+}
+
+function getMediaType(key) {
+  const sel = document.querySelector('.tt-btn.on[data-key="'+key+'"]');
+  return sel ? sel.dataset.type : 'video';
+}
+
+function updateStatus() {
+  const active = features.filter(f => isEnabled(f.key));
+  document.getElementById('status-list').innerHTML = features.map(f => {
+    const on = isEnabled(f.key);
+    // assign row based on active position
+    const activeKeys = features.filter(x => isEnabled(x.key)).map(x=>x.key);
+    const idx = activeKeys.indexOf(f.key);
+    const row = idx >= 0 ? (Math.floor(idx / 3) + 1) : '-';
+    return `<div class="status-item">
+      <div class="status-dot ${on?'on':'off'}"></div>
+      <span>${val(f.key+'-label') || f.label}</span>
+      ${on ? '<span class="row-badge">Reihe '+row+'</span>' : ''}
     </div>`;
   }).join('');
 }
 
-function buildCards() {
-  document.getElementById('pane-cards').innerHTML = features.map(f => `
-    <div class="ed-card">
-      <div class="ed-card-head"><div class="dot"></div><span>${f.label}</span></div>
-      <div class="ed-row"><label>Kartentitel</label><input type="text" id="${f.key}-label" value="${f.label}"></div>
-      <div class="ed-row"><label>Kurztext</label><textarea id="${f.key}-short">${f.short}</textarea></div>
-      <div class="ed-row"><label>Overline</label><input type="text" id="${f.key}-ov" value="${f.ov}"></div>
-      <div class="ed-row"><label>Expand Titel</label><input type="text" id="${f.key}-title" value="${f.title}"></div>
-      <div class="ed-row"><label>Expand Text</label><textarea id="${f.key}-long">${f.long}</textarea></div>
-    </div>`).join('');
+function mediaTag(key) {
+  const url = val(key+'-media-url');
+  if (getMediaType(key) === 'image') {
+    return '<img src="'+url+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:#ffffff">';
+  }
+  return '<video autoplay muted loop playsinline><source src="'+url+'" type="video/mp4"></video>';
 }
 
-function buildMedia() {
-  document.getElementById('pane-media').innerHTML = features.map(f => `
-    <div class="ed-card">
-      <div class="ed-card-head"><div class="dot"></div><span>${f.label}</span></div>
-      <div class="media-block">
-        <div class="media-block-head">Medientyp im Expand-Panel</div>
-        <div class="type-toggle">
-          <button class="tt-btn on" data-key="${f.key}" data-type="video" onclick="setMediaType('${f.key}','video')">Video</button>
-          <button class="tt-btn" data-key="${f.key}" data-type="image" onclick="setMediaType('${f.key}','image')">Bild</button>
+function buildEditor() {
+  document.getElementById('editor').innerHTML = features.map(f => `
+    <div class="ed-card" id="card-${f.key}">
+      <div class="ed-card-head">
+        <div class="toggle-wrap">
+          <button class="toggle on" id="tog-${f.key}" onclick="toggleCard('${f.key}')"></button>
         </div>
-        <div class="ed-row">
-          <label id="url-label-${f.key}">Video URL</label>
-          <input type="text" id="${f.key}-media-url" value="${defaultVideo}" oninput="updatePreview()">
+        <span class="card-label" onclick="expandCard('${f.key}')">${f.label}</span>
+        <svg class="chevron" id="chev-${f.key}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" onclick="expandCard('${f.key}')"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="ed-body" id="body-${f.key}">
+
+        <div class="ed-section">
+          <div class="ed-section-label">Karte</div>
+          <div class="ed-row"><label>Titel</label><input type="text" id="${f.key}-label" value="${f.label}" oninput="updateStatus()"></div>
+          <div class="ed-row"><label>Kurztext</label><textarea id="${f.key}-short">${f.short}</textarea></div>
         </div>
-        <p class="hint" id="url-hint-${f.key}">MP4-Link aus der WordPress Mediathek einfügen</p>
+
+        <div class="sep"></div>
+
+        <div class="ed-section">
+          <div class="ed-section-label">Icon</div>
+          <div class="icon-grid">
+            ${Object.entries(ICONS).map(([k,svg])=>`
+              <button class="icon-btn ${f.icon===k?'selected':''}" data-key="${f.key}" data-icon="${k}" onclick="selectIcon('${f.key}','${k}')" title="${k}">${svg}</button>
+            `).join('')}
+          </div>
+          <button class="upload-icon-btn" onclick="triggerUpload('${f.key}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Eigenes SVG-Icon hochladen
+          </button>
+          <input type="file" id="svg-upload-${f.key}" accept=".svg,image/svg+xml" style="display:none" onchange="handleSvgUpload('${f.key}',this)">
+          <div id="custom-prev-${f.key}" class="custom-icon-preview" style="display:none;margin-top:6px"></div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="ed-section">
+          <div class="ed-section-label">Expand Panel – Text</div>
+          <div class="ed-row"><label>Overline</label><input type="text" id="${f.key}-ov" value="${f.ov}"></div>
+          <div class="ed-row"><label>Titel</label><input type="text" id="${f.key}-title" value="${f.title}"></div>
+          <div class="ed-row"><label>Text</label><textarea id="${f.key}-long">${f.long}</textarea></div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="ed-section">
+          <div class="ed-section-label">Expand Panel – Medium</div>
+          <div class="type-toggle">
+            <button class="tt-btn on" data-key="${f.key}" data-type="video" onclick="setMediaType('${f.key}','video')">Video</button>
+            <button class="tt-btn" data-key="${f.key}" data-type="image" onclick="setMediaType('${f.key}','image')">Bild</button>
+          </div>
+          <div class="ed-row">
+            <label id="url-label-${f.key}">Video URL</label>
+            <input type="text" id="${f.key}-media-url" value="${f.mediaUrl}" oninput="updatePreview('${f.key}')">
+          </div>
+          <div class="media-preview" id="prev-${f.key}"><div class="prev-empty">Vorschau</div></div>
+        </div>
+
       </div>
     </div>`).join('');
-}
 
-function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
-
-function mediaTag(f) {
-  const url = val(f.key+'-media-url');
-  if (mediaTypes[f.key] === 'image') {
-    return `<img src="${url}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:#ffffff">`;
-  }
-  return `<video autoplay muted loop playsinline><source src="${url}" type="video/mp4"></video>`;
-}
-
-function expandPanel(r, f) {
-  return `
-  <div class="bk-fx" id="bk-fx${r}">
-    <div class="bk-fx-media">${mediaTag(f)}</div>
-    <div class="bk-fx-txt">
-      <span class="bk-fx-ov" id="bk-ft${r}"></span>
-      <h3 id="bk-fh${r}"></h3>
-      <p id="bk-fd${r}"></p>
-      <button class="bk-close-btn" onclick="bkCloseF(${r})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>Schliessen</button>
-    </div>
-  </div>`;
+  features.forEach(f => updatePreview(f.key));
+  updateStatus();
 }
 
 function copyCode() {
-  const row1last = features.find(f => f.key==='lasertv');
-  const row2last = features.find(f => f.key==='swiss');
-  const cards = features.map(f => `
-  <div class="bk-fi" data-f="${f.key}">
-    <span class="bk-fi-icon">${svgIcons[f.icon]}</span>
+  const active = features.filter(f => isEnabled(f.key));
+  if (active.length === 0) { alert('Bitte mindestens eine Karte aktivieren.'); return; }
+
+  // Assign rows to active features (groups of 3)
+  const rows = {};
+  active.forEach((f, i) => { rows[f.key] = Math.floor(i / 3) + 1; });
+
+  // Find last item in each row for expand panel placement
+  const rowMap = {};
+  active.forEach(f => { rowMap[rows[f.key]] = f.key; });
+  const numRows = Math.max(...Object.values(rows));
+
+  const cards = active.map(f => {
+    const isLastInRow = rowMap[rows[f.key]] === f.key;
+    const r = rows[f.key];
+    return `
+  <div class="bk-fi" data-f="${f.key}" data-r="${r}">
+    <span class="bk-fi-icon">${getIconSvg(f.key)}</span>
     <h4>${val(f.key+'-label')}</h4>
     <p>${val(f.key+'-short')}</p>
     <svg class="bk-fi-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-  </div>${f.key==='lasertv' ? expandPanel(1,row1last) : ''}${f.key==='swiss' ? expandPanel(2,row2last) : ''}`).join('');
+  </div>${isLastInRow ? expandPanelHtml(r, f.key) : ''}`;
+  }).join('');
 
-  const fd = features.map(f => `  ${f.key}:{t:'${val(f.key+"-ov")}',h:'${val(f.key+"-title")}',d:'${val(f.key+"-long")}',r:${f.row}}`).join(',\n');
+  const fd = active.map(f =>
+    `  ${f.key}:{t:'${val(f.key+"-ov")}',h:'${val(f.key+"-title")}',d:'${val(f.key+"-long")}',r:${rows[f.key]}}`
+  ).join(',\n');
+
+  // Build close IDs string for all rows
+  const closeAll = Array.from({length:numRows},(_,i)=>`bkCloseF(${i+1})`).join(';');
 
   const code = `<style>
 .bk-features{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#111}
 .bk-fi{background:#1a1a1a;padding:36px 28px 52px;border-top:2px solid transparent;transition:border-color .3s,background .3s;cursor:pointer;position:relative}
 .bk-fi:hover,.bk-fi.active{border-top-color:#c8a96e;background:#1c1c1c}
-.bk-fi.pulse{animation:bkPulse .4s ease}
-@keyframes bkPulse{0%{background:#1c1c1c}30%{background:#2a2210}100%{background:#1c1c1c}}
 .bk-fi.pulse{animation:bkPulse .4s ease}
 @keyframes bkPulse{0%{background:#1c1c1c}30%{background:#2a2210}100%{background:#1c1c1c}}
 .bk-fi-icon{width:36px;height:36px;margin-bottom:18px;display:block}
@@ -254,7 +354,8 @@ function copyCode() {
 .bk-fx.open{display:grid;grid-template-columns:1fr 1fr}
 @keyframes bkIn{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0% 0 0)}}
 .bk-fx-media{background:#000;position:relative;overflow:hidden;aspect-ratio:16/9;height:auto}
-.bk-fx-media video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:block}.bk-fx-media img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;display:block;background:#ffffff}
+.bk-fx-media video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:block}
+.bk-fx-media img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;display:block;background:#ffffff}
 .bk-fx-txt{padding:48px 44px;display:flex;flex-direction:column;justify-content:center}
 .bk-fx-txt h3,.bk-fx-txt p,.bk-fx-ov{animation:bkTxtIn .35s ease}
 @keyframes bkTxtIn{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0%)}}
@@ -273,8 +374,8 @@ ${fd}
 };
 var bkActive=null;
 function isMobile(){return window.innerWidth<=768}
-function bkCloseF(r){document.getElementById('bk-fx'+r).classList.remove('open');var mob=document.getElementById('bk-fx-mob');if(mob)mob.remove();document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active');e.classList.remove('pulse')});bkActive=null}
-document.querySelectorAll('.bk-fi').forEach(function(el){el.addEventListener('click',function(){var k=this.dataset.f,d=bkFd[k];if(bkActive===k){bkCloseF(d.r);return}bkCloseF(1);bkCloseF(2);document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active');e.classList.remove('pulse')});this.classList.add('active');this.classList.remove('pulse');void this.offsetWidth;this.classList.add('pulse');bkActive=k;if(isMobile()){var mediaContent=document.getElementById('bk-fx'+d.r).querySelector('.bk-fx-media').innerHTML;var mob=document.createElement('div');mob.id='bk-fx-mob';mob.className='bk-fx open';mob.style.gridColumn='1 / -1';mob.innerHTML='<div class="bk-fx-media">'+mediaContent+'</div><div class="bk-fx-txt"><span class="bk-fx-ov">'+d.t+'</span><h3>'+d.h+'</h3><p>'+d.d+'</p><button class="bk-close-btn" onclick="bkCloseF('+d.r+')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>Schliessen</button></div>';this.insertAdjacentElement('afterend',mob);mob.scrollIntoView({behavior:'smooth',block:'nearest'})}else{document.getElementById('bk-ft'+d.r).textContent=d.t;document.getElementById('bk-fh'+d.r).textContent=d.h;document.getElementById('bk-fd'+d.r).textContent=d.d;var p=document.getElementById('bk-fx'+d.r);p.classList.add('open');p.scrollIntoView({behavior:'smooth',block:'nearest'})}})});
+function bkCloseF(r){var p=document.getElementById('bk-fx'+r);if(p)p.classList.remove('open');var mob=document.getElementById('bk-fx-mob');if(mob)mob.remove();document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active');e.classList.remove('pulse')});bkActive=null}
+document.querySelectorAll('.bk-fi').forEach(function(el){el.addEventListener('click',function(){var k=this.dataset.f,d=bkFd[k];if(bkActive===k){bkCloseF(d.r);return}${Array.from({length:numRows},(_,i)=>`bkCloseF(${i+1})`).join(';')};document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active');e.classList.remove('pulse')});this.classList.add('active');this.classList.remove('pulse');void this.offsetWidth;this.classList.add('pulse');bkActive=k;if(isMobile()){var mediaContent=document.getElementById('bk-fx'+d.r).querySelector('.bk-fx-media').innerHTML;var mob=document.createElement('div');mob.id='bk-fx-mob';mob.className='bk-fx open';mob.style.gridColumn='1 / -1';mob.innerHTML='<div class="bk-fx-media">'+mediaContent+'</div><div class="bk-fx-txt"><span class="bk-fx-ov">'+d.t+'</span><h3>'+d.h+'</h3><p>'+d.d+'</p><button class="bk-close-btn" onclick="bkCloseF('+d.r+')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>Schliessen</button></div>';this.insertAdjacentElement('afterend',mob);mob.scrollIntoView({behavior:'smooth',block:'nearest'})}else{document.getElementById('bk-ft'+d.r).textContent=d.t;document.getElementById('bk-fh'+d.r).textContent=d.h;document.getElementById('bk-fd'+d.r).textContent=d.d;var p=document.getElementById('bk-fx'+d.r);p.classList.add('open');p.scrollIntoView({behavior:'smooth',block:'nearest'})}})});
 <\/script>`;
 
   navigator.clipboard.writeText(code).then(() => {
@@ -285,9 +386,20 @@ document.querySelectorAll('.bk-fi').forEach(function(el){el.addEventListener('cl
   });
 }
 
-buildCards();
-buildMedia();
-updatePreview();
+function expandPanelHtml(r, key) {
+  return `
+  <div class="bk-fx" id="bk-fx${r}">
+    <div class="bk-fx-media">${mediaTag(key)}</div>
+    <div class="bk-fx-txt">
+      <span class="bk-fx-ov" id="bk-ft${r}"></span>
+      <h3 id="bk-fh${r}"></h3>
+      <p id="bk-fd${r}"></p>
+      <button class="bk-close-btn" onclick="bkCloseF(${r})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>Schliessen</button>
+    </div>
+  </div>`;
+}
+
+buildEditor();
 </script>
 </body>
 </html>
