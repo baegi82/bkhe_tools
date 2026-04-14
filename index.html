@@ -204,7 +204,7 @@ function val(id) { const el = document.getElementById(id); return el ? el.value.
 function mediaTag(f) {
   const url = val(f.key+'-media-url');
   if (mediaTypes[f.key] === 'image') {
-    return `<img src="${url}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">`;
+    return `<img src="${url}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:#0a0a0a">`;
   }
   return `<video autoplay muted loop playsinline><source src="${url}" type="video/mp4"></video>`;
 }
@@ -239,6 +239,8 @@ function copyCode() {
 .bk-features{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#111}
 .bk-fi{background:#1a1a1a;padding:36px 28px 52px;border-top:2px solid transparent;transition:border-color .3s,background .3s;cursor:pointer;position:relative}
 .bk-fi:hover,.bk-fi.active{border-top-color:#c8a96e;background:#1c1c1c}
+.bk-fi.pulse{animation:bkPulse .4s ease}
+@keyframes bkPulse{0%{background:#1c1c1c}30%{background:#2a2210}100%{background:#1c1c1c}}
 .bk-fi-icon{width:36px;height:36px;margin-bottom:18px;display:block}
 .bk-fi-icon svg{width:36px;height:36px;fill:none;stroke:#c8a96e;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .bk-fi h4{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#f5f3ef;margin:0 0 8px}
@@ -248,10 +250,12 @@ function copyCode() {
 .bk-fi.active .bk-fi-arrow{transform:rotate(180deg)}
 .bk-fx{display:none;grid-column:1/-1;background:#0d0d0d;border-top:1px solid #222;animation:bkIn .3s ease}
 .bk-fx.open{display:grid;grid-template-columns:1fr 1fr}
-@keyframes bkIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bkIn{from{opacity:0;transform:translateY(-12px) scaleY(0.97)}to{opacity:1;transform:translateY(0) scaleY(1)}}
 .bk-fx-media{background:#000;min-height:320px;height:320px;position:relative;overflow:hidden}
-.bk-fx-media video,.bk-fx-media img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:block}
+.bk-fx-media video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:block}.bk-fx-media img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;display:block;background:#0a0a0a}
 .bk-fx-txt{padding:48px 44px;display:flex;flex-direction:column;justify-content:center}
+.bk-fx-txt h3,.bk-fx-txt p,.bk-fx-ov{animation:bkTxtIn .35s ease}
+@keyframes bkTxtIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
 .bk-fx-ov{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#c8a96e;margin-bottom:10px;display:block}
 .bk-fx-txt h3{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;text-transform:uppercase;color:#f5f3ef;margin:0 0 14px}
 .bk-fx-txt p{font-size:14px;color:rgba(245,243,239,.6);line-height:1.8;margin:0 0 24px}
@@ -267,7 +271,7 @@ ${fd}
 };
 var bkActive=null;
 function bkCloseF(r){document.getElementById('bk-fx'+r).classList.remove('open');document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active')});bkActive=null}
-document.querySelectorAll('.bk-fi').forEach(function(el){el.addEventListener('click',function(){var k=this.dataset.f,d=bkFd[k];if(bkActive===k){bkCloseF(d.r);return}bkCloseF(1);bkCloseF(2);document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active')});this.classList.add('active');bkActive=k;document.getElementById('bk-ft'+d.r).textContent=d.t;document.getElementById('bk-fh'+d.r).textContent=d.h;document.getElementById('bk-fd'+d.r).textContent=d.d;var p=document.getElementById('bk-fx'+d.r);p.classList.add('open');p.scrollIntoView({behavior:'smooth',block:'nearest'})})});
+document.querySelectorAll('.bk-fi').forEach(function(el){el.addEventListener('click',function(){var k=this.dataset.f,d=bkFd[k];if(bkActive===k){bkCloseF(d.r);return}bkCloseF(1);bkCloseF(2);document.querySelectorAll('.bk-fi').forEach(function(e){e.classList.remove('active')});this.classList.add('active');this.classList.remove('pulse');void this.offsetWidth;this.classList.add('pulse');bkActive=k;document.getElementById('bk-ft'+d.r).textContent=d.t;document.getElementById('bk-fh'+d.r).textContent=d.h;document.getElementById('bk-fd'+d.r).textContent=d.d;var p=document.getElementById('bk-fx'+d.r);p.classList.add('open');p.scrollIntoView({behavior:'smooth',block:'nearest'})})});
 <\/script>`;
 
   navigator.clipboard.writeText(code).then(() => {
